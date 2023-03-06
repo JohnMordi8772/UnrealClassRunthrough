@@ -29,10 +29,10 @@ void AEnemyCharacter::Tick(float DeltaTime)
 	//Fetch the character currently being controlled by the player
 	ACharacter* PlayerCharacter = UGameplayStatics::GetPlayerCharacter(this, 0);
 
-	LookAtActor(PlayerCharacter);
+	LookAtActor(PlayerCharacter, DeltaTime);
 }
 
-void AEnemyCharacter::LookAtActor(AActor* TargetActor)
+void AEnemyCharacter::LookAtActor(AActor* TargetActor, float DeltaTime)
 {
 	if (TargetActor == nullptr) return;
 
@@ -45,6 +45,11 @@ void AEnemyCharacter::LookAtActor(AActor* TargetActor)
 
 		// Set the enemy's rotation to that rotation
 		SetActorRotation(LookAtRotation);
+
+		if (Count >= 2)
+			ThrowDodgeball();
+		else
+			Count += DeltaTime;
 	}
 }
 
@@ -78,6 +83,12 @@ bool AEnemyCharacter::CanSeeActor(const AActor* const TargetActor) const
 	DrawDebugLine(GetWorld(), Start, End, LineColor);
 
 	return !Hit.bBlockingHit;
+}
+
+void AEnemyCharacter::ThrowDodgeball()
+{
+	Count = 0;
+	GetWorld()->SpawnActor<AActor>(Dodgeball, this->GetActorTransform());
 }
 
 // Called to bind functionality to input
