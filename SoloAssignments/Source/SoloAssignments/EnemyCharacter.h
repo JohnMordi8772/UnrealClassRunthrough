@@ -17,12 +17,19 @@ public:
 
 	float Count;
 
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<AActor> Dodgeball;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Dodgeball)
+	TSubclassOf<class ADodgeballProjectile> Dodgeball;
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	bool bCanSeePlayer = false;
+	bool bPreviousCanSeePlayer = false;
+
+	FTimerHandle ThrowTimerHandle;
+	float ThrowingInterval = 2.f;
+	float ThrowingDelay = 0.5f;
 
 public:	
 	// Called every frame
@@ -32,7 +39,7 @@ public:
 	//virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	//Change the rotation of the character to the face the given actor
-	void LookAtActor(AActor* TargetActor, float DeltaTime);
+	bool LookAtActor(AActor* TargetActor, float DeltaTime);
 
 	//Can we see the given actor
 	bool CanSeeActor(const AActor* const TargetActor) const;

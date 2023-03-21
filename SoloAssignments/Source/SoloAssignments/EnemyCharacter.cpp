@@ -5,6 +5,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "DrawDebugHelpers.h"
+#include "TimerManager.h"
+#include "DodgeballProjectile.h"
 
 // Sets default values
 AEnemyCharacter::AEnemyCharacter()
@@ -29,12 +31,26 @@ void AEnemyCharacter::Tick(float DeltaTime)
 	//Fetch the character currently being controlled by the player
 	ACharacter* PlayerCharacter = UGameplayStatics::GetPlayerCharacter(this, 0);
 
-	LookAtActor(PlayerCharacter, DeltaTime);
+	bCanSeePlayer = LookAtActor(PlayerCharacter, DeltaTime);
+
+	if (bCanSeePlayer != bPreviousCanSeePlayer)
+	{
+		if (bCanSeePlayer)
+		{
+			GetWorldTimerManager().SetTimer(ThrowTimerHandle, this, &AEnemyCharacter::ThrowDodgeball, ThrowingInterval, true, ThrowingDelay);
+		}
+		else
+		{
+			GetWorldTimerManager().ClearTimer(ThrowTimerHandle);
+		}
+	}
+
+	bPreviousCanSeePlayer = bCanSeePlayer;
 }
 
-void AEnemyCharacter::LookAtActor(AActor* TargetActor, float DeltaTime)
+bool AEnemyCharacter::LookAtActor(AActor* TargetActor, float DeltaTime)
 {
-	if (TargetActor == nullptr) return;
+	if (TargetActor == nullptr) return false;
 
 	if (CanSeeActor(TargetActor))
 	{
@@ -46,11 +62,10 @@ void AEnemyCharacter::LookAtActor(AActor* TargetActor, float DeltaTime)
 		// Set the enemy's rotation to that rotation
 		SetActorRotation(LookAtRotation);
 
-		if (Count >= 2)
-			ThrowDodgeball();
-		else
-			Count += DeltaTime;
+		return true;
 	}
+
+	return false;
 }
 
 bool AEnemyCharacter::CanSeeActor(const AActor* const TargetActor) const
@@ -87,8 +102,13 @@ bool AEnemyCharacter::CanSeeActor(const AActor* const TargetActor) const
 
 void AEnemyCharacter::ThrowDodgeball()
 {
-	Count = 0;
-	GetWorld()->SpawnActor<AActor>(Dodgeball, this->GetActorTransform());
+	if (Dodgeball == nullptr)
+		return;
+
+	FVector ForwardVector = GetActorForwardVector();
+	float SpawnDistance = 40.f;
+	FVector SpawnLocation = GetActorLocation() + (ForwardVector * SpawnDistance);
+	GetWorld()->SpawnActor<ADodgeballProjectile>(Dodgeball, SpawnLocation, GetActorRotation());
 }
 
 // Called to bind functionality to input
